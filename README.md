@@ -11,7 +11,9 @@ No build step, no CRA, no Webpack – just open it locally with a tiny static se
 
 ---
 
-## 🎯 What This Tool Does
+## 🎯 What This Tool Does<img width="1356" height="574" alt="mini-figma-2" src="https://github.com/user-attachments/assets/4dac9377-9aba-4dda-9ba3-62c976b8f7bb" />
+<img width="1357" height="627" alt="mini-figma-1" src="https://github.com/user-attachments/assets/46f37646-9c3d-4a57-a326-8c8ff68556ff" />
+
 
 The app simulates a **mini page builder / test builder**:
 
