@@ -349,6 +349,8 @@ function Sidebar({
   onBringFront,
   onSendBack,
   onDeleteSelected,
+  onDuplicateSelected,
+  onUpdateSelected,
   exportJson,
   isValid,
   errors
@@ -401,7 +403,6 @@ function Sidebar({
           </button>
         ))}
       </div>
-
       <div className="sidebar-panel">
         <div>
           <strong>Selected:</strong>{" "}
@@ -409,7 +410,8 @@ function Sidebar({
             ? `${selectedElement.type} (id: ${selectedElement.id})`
             : "none"}
         </div>
-        <div>
+
+        <div style={{ marginTop: "6px" }}>
           <button onClick={onBringFront} disabled={!selectedElement}>
             Bring to Front
           </button>
@@ -419,7 +421,81 @@ function Sidebar({
           <button onClick={onDeleteSelected} disabled={!selectedElement}>
             Delete
           </button>
+          <button onClick={onDuplicateSelected} disabled={!selectedElement}>
+            Duplicate
+          </button>
         </div>
+
+        {selectedElement && (
+          <div
+            style={{
+              marginTop: "10px",
+              padding: "8px",
+              borderRadius: "6px",
+              background: "#020617"
+            }}
+          >
+            <div style={{ fontSize: "12px", marginBottom: "6px" }}>
+              <strong>Properties</strong>
+            </div>
+            <div style={{ display: "flex", gap: "6px", marginBottom: "4px" }}>
+              <label style={{ fontSize: "11px" }}>
+                X:
+                <input
+                  type="number"
+                  style={{ width: "60px", marginLeft: "4px" }}
+                  value={Math.round(selectedElement.x)}
+                  onChange={(e) =>
+                    onUpdateSelected({
+                      x: Number(e.target.value) || 0
+                    })
+                  }
+                />
+              </label>
+              <label style={{ fontSize: "11px" }}>
+                Y:
+                <input
+                  type="number"
+                  style={{ width: "60px", marginLeft: "4px" }}
+                  value={Math.round(selectedElement.y)}
+                  onChange={(e) =>
+                    onUpdateSelected({
+                      y: Number(e.target.value) || 0
+                    })
+                  }
+                />
+              </label>
+            </div>
+            <div style={{ display: "flex", gap: "6px" }}>
+              <label style={{ fontSize: "11px" }}>
+                W:
+                <input
+                  type="number"
+                  style={{ width: "60px", marginLeft: "4px" }}
+                  value={Math.round(selectedElement.width)}
+                  onChange={(e) =>
+                    onUpdateSelected({
+                      width: Math.max(10, Number(e.target.value) || 10)
+                    })
+                  }
+                />
+              </label>
+              <label style={{ fontSize: "11px" }}>
+                H:
+                <input
+                  type="number"
+                  style={{ width: "60px", marginLeft: "4px" }}
+                  value={Math.round(selectedElement.height)}
+                  onChange={(e) =>
+                    onUpdateSelected({
+                      height: Math.max(10, Number(e.target.value) || 10)
+                    })
+                  }
+                />
+              </label>
+            </div>
+          </div>
+        )}
 
         <div style={{ marginTop: "8px", fontSize: "11px" }}>
           JSON valid: <strong>{isValid ? "yes" : "no"}</strong>
@@ -434,13 +510,35 @@ function Sidebar({
           <div style={{ marginTop: "6px" }}>
             <button
               style={{ marginRight: "4px", padding: "4px 8px", fontSize: "11px" }}
-              onClick={handleCopyJson}
+              onClick={() => {
+                const text = JSON.stringify(exportJson, null, 2);
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                  navigator.clipboard.writeText(text).catch(() => {
+                    alert("Clipboard error, but JSON is visible below.");
+                  });
+                } else {
+                  alert("Clipboard API not available, but JSON is visible below.");
+                }
+              }}
             >
               Copy JSON
             </button>
             <button
               style={{ padding: "4px 8px", fontSize: "11px" }}
-              onClick={handleDownloadJson}
+              onClick={() => {
+                const blob = new Blob(
+                  [JSON.stringify(exportJson, null, 2)],
+                  { type: "application/json" }
+                );
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "test-builder-layout.json";
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+              }}
             >
               Download JSON
             </button>
@@ -816,6 +914,38 @@ function App() {
       )
     );
   };
+    const updateSelectedElement = (patch) => {
+    if (!selectedElement) return;
+    const targetId = selectedElement.id;
+
+    setElements((prev) =>
+      prev.map((el) =>
+        el.id === targetId
+          ? { ...el, ...patch }
+          : el
+      )
+    );
+  };
+  
+    const duplicateSelected = () => {
+    if (!selectedElement) return;
+
+    const original = selectedElement;
+    const newId = nextIdRef.current++;
+
+    const offset = 20; // slight offset so you see both
+    const clone = {
+      ...original,
+      id: newId,
+      x: original.x + offset,
+      y: original.y + offset,
+      zIndex: (original.zIndex || 1) + 1
+    };
+
+    setElements((prev) => [...prev, clone]);
+    setSelectedId(newId);
+  };
+
 
   const deleteSelected = () => {
     if (!selectedElement) return;
@@ -855,6 +985,8 @@ function App() {
         onBringFront={bringToFront}
         onSendBack={sendToBack}
         onDeleteSelected={deleteSelected}
+        onDuplicateSelected={duplicateSelected}
+        onUpdateSelected={updateSelectedElement}
         exportJson={exportJson}
         isValid={isValid}
         errors={errors}
